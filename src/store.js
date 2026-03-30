@@ -5,17 +5,13 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
-export function getSupabase() {
-  return supabase;
-}
-
 export async function getProject(code) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('projects')
     .select('*, tasks(*)')
     .eq('code', code)
-    .order('created_at', { referencedTable: 'tasks', ascending: false })
     .single();
+  if (error) console.error('getProject error:', error);
   return data;
 }
 
@@ -24,7 +20,7 @@ export async function createProject(name) {
   const { error } = await supabase
     .from('projects')
     .insert({ code, name: name.trim() });
-  if (error) return null;
+  if (error) { console.error('createProject error:', error); return null; }
   return getProject(code);
 }
 
@@ -33,20 +29,23 @@ export async function joinProject(code) {
 }
 
 export async function addTask(projectCode, memberName, description) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('tasks')
     .insert({ project_code: projectCode, member_name: memberName.trim(), description: description.trim() })
     .select()
     .single();
+  if (error) console.error('addTask error:', error);
   return data;
 }
 
 export async function updateTaskStatus(projectCode, taskId, status) {
-  await supabase.from('tasks').update({ status }).eq('id', taskId);
+  const { error } = await supabase.from('tasks').update({ status }).eq('id', taskId);
+  if (error) console.error('updateTaskStatus error:', error);
   return getProject(projectCode);
 }
 
 export async function deleteTask(projectCode, taskId) {
-  await supabase.from('tasks').delete().eq('id', taskId);
+  const { error } = await supabase.from('tasks').delete().eq('id', taskId);
+  if (error) console.error('deleteTask error:', error);
   return getProject(projectCode);
 }
