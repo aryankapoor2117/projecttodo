@@ -6,24 +6,24 @@ import AddTaskForm from '../components/AddTaskForm';
 export default function Room({ project, onLeave, onUpdate }) {
   const [copied, setCopied] = useState(false);
 
-  const active = project.tasks.filter(t => t.status !== 'done');
-  const done = project.tasks.filter(t => t.status === 'done');
+  // Supabase returns tasks as a nested array
+  const tasks = project.tasks || [];
+  const active = tasks.filter(t => t.status !== 'done');
+  const done = tasks.filter(t => t.status === 'done');
 
-  function handleAdd(memberName, description) {
-    const updated = { ...project };
-    const task = addTask(project.code, memberName, description);
-    updated.tasks = [task, ...project.tasks];
-    onUpdate(updated);
+  async function handleAdd(memberName, description) {
+    const task = await addTask(project.code, memberName, description);
+    if (task) onUpdate({ ...project, tasks: [task, ...tasks] });
   }
 
-  function handleStatus(taskId, status) {
-    const result = updateTaskStatus(project.code, taskId, status);
-    onUpdate({ ...result });
+  async function handleStatus(taskId, status) {
+    const updated = await updateTaskStatus(project.code, taskId, status);
+    if (updated) onUpdate(updated);
   }
 
-  function handleDelete(taskId) {
-    const result = deleteTask(project.code, taskId);
-    onUpdate({ ...result });
+  async function handleDelete(taskId) {
+    const updated = await deleteTask(project.code, taskId);
+    if (updated) onUpdate(updated);
   }
 
   function copyCode() {

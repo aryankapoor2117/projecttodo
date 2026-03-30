@@ -6,17 +6,22 @@ export default function Home({ onEnter }) {
   const [projectName, setProjectName] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  function handleCreate(e) {
+  async function handleCreate(e) {
     e.preventDefault();
     if (!projectName.trim()) return;
-    const project = createProject(projectName);
-    onEnter(project);
+    setLoading(true);
+    const project = await createProject(projectName);
+    setLoading(false);
+    if (project) onEnter(project);
   }
 
-  function handleJoin(e) {
+  async function handleJoin(e) {
     e.preventDefault();
-    const project = joinProject(joinCode);
+    setLoading(true);
+    const project = await joinProject(joinCode);
+    setLoading(false);
     if (!project) {
       setError('No project found with that code.');
       return;
@@ -55,8 +60,8 @@ export default function Home({ onEnter }) {
               <button type="button" className="btn btn-ghost" onClick={() => setMode(null)}>
                 Back
               </button>
-              <button type="submit" className="btn btn-primary" disabled={!projectName.trim()}>
-                Create
+              <button type="submit" className="btn btn-primary" disabled={!projectName.trim() || loading}>
+                {loading ? 'Creating…' : 'Create'}
               </button>
             </div>
           </form>
@@ -77,8 +82,8 @@ export default function Home({ onEnter }) {
               <button type="button" className="btn btn-ghost" onClick={() => { setMode(null); setError(''); }}>
                 Back
               </button>
-              <button type="submit" className="btn btn-primary" disabled={!joinCode.trim()}>
-                Join
+              <button type="submit" className="btn btn-primary" disabled={!joinCode.trim() || loading}>
+                {loading ? 'Joining…' : 'Join'}
               </button>
             </div>
           </form>

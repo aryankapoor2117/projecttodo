@@ -21,7 +21,7 @@ export default function TaskCard({ task, onStatusChange, onDelete }) {
     <div className={`task-card task-card--${task.status}`}>
       <div className="task-card-top">
         <div className="task-card-left">
-          <span className="task-member">{task.memberName}</span>
+          <span className="task-member">{task.member_name || task.memberName}</span>
           <p className="task-description">{task.description}</p>
         </div>
         <div className="task-card-right">

@@ -1,66 +1,53 @@
-// Data layer — swap these functions for API calls when connecting a backend
+import { createClient } from '@supabase/supabase-js';
 
-const STORAGE_KEY = 'projectodo_data';
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
-function load() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-  } catch {
-    return {};
-  }
+export function getSupabase() {
+  return supabase;
 }
 
-function save(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+export async function getProject(code) {
+  const { data } = await supabase
+    .from('projects')
+    .select('*, tasks(*)')
+    .eq('code', code)
+    .order('created_at', { referencedTable: 'tasks', ascending: false })
+    .single();
+  return data;
 }
 
-export function getProject(code) {
-  const data = load();
-  return data[code] || null;
-}
-
-export function createProject(name) {
+export async function createProject(name) {
   const code = name.trim().toLowerCase().replace(/\s+/g, '-') + '-' + Math.random().toString(36).slice(2, 6);
-  const data = load();
-  data[code] = { code, name: name.trim(), tasks: [] };
-  save(data);
-  return data[code];
+  const { data } = await supabase
+    .from('projects')
+    .insert({ code, name: name.trim() })
+    .select('*, tasks(*)')
+    .single();
+  return data;
 }
 
-export function joinProject(code) {
+export async function joinProject(code) {
   return getProject(code.trim().toLowerCase());
 }
 
-export function addTask(projectCode, memberName, description) {
-  const data = load();
-  if (!data[projectCode]) return null;
-  const task = {
-    id: crypto.randomUUID(),
-    memberName: memberName.trim(),
-    description: description.trim(),
-    status: 'in-progress',
-    createdAt: new Date().toISOString(),
-  };
-  data[projectCode].tasks.unshift(task);
-  save(data);
-  return task;
+export async function addTask(projectCode, memberName, description) {
+  const { data } = await supabase
+    .from('tasks')
+    .insert({ project_code: projectCode, member_name: memberName.trim(), description: description.trim() })
+    .select()
+    .single();
+  return data;
 }
 
-export function updateTaskStatus(projectCode, taskId, status) {
-  const data = load();
-  if (!data[projectCode]) return;
-  const task = data[projectCode].tasks.find(t => t.id === taskId);
-  if (task) {
-    task.status = status;
-    save(data);
-  }
-  return data[projectCode];
+export async function updateTaskStatus(projectCode, taskId, status) {
+  await supabase.from('tasks').update({ status }).eq('id', taskId);
+  return getProject(projectCode);
 }
 
-export function deleteTask(projectCode, taskId) {
-  const data = load();
-  if (!data[projectCode]) return;
-  data[projectCode].tasks = data[projectCode].tasks.filter(t => t.id !== taskId);
-  save(data);
-  return data[projectCode];
+export async function deleteTask(projectCode, taskId) {
+  await supabase.from('tasks').delete().eq('id', taskId);
+  return getProject(projectCode);
 }
