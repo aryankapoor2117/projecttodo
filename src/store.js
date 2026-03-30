@@ -21,12 +21,11 @@ export async function getProject(code) {
 
 export async function createProject(name) {
   const code = name.trim().toLowerCase().replace(/\s+/g, '-') + '-' + Math.random().toString(36).slice(2, 6);
-  const { data } = await supabase
+  const { error } = await supabase
     .from('projects')
-    .insert({ code, name: name.trim() })
-    .select('*, tasks(*)')
-    .single();
-  return data;
+    .insert({ code, name: name.trim() });
+  if (error) return null;
+  return getProject(code);
 }
 
 export async function joinProject(code) {
